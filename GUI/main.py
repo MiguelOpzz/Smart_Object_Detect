@@ -2,6 +2,7 @@ import streamlit as st
 import cv2
 import imutils
 from torch import hub
+import winsound
 import time
 from threading import Thread
 
@@ -58,6 +59,7 @@ def perform_object_detection():
                 cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 255), 2)
 
             if len(persons) > 0:
+                winsound.Beep(1000, 200)
                 st.write("Person detected. LAMP = ON ")
             else:
                 obj_detection_cap.release()
@@ -90,17 +92,20 @@ st.title("SMART MOTION DETECTION | ARTIFICIAL INTELLIGENCE")
 
 st.write("## Real Time Interference")
 
-if st.button("Start"):
+start_button = st.button("Start.png")
+if start_button:
     start_motion_detection()
     t = Thread(target=perform_object_detection)
     t.start()
     st.write("Start Video")
 
-if st.button("Stop"):
+stop_button = st.button("Stop.png")
+if stop_button:
     stop_motion_detection()
     if obj_detection_cap:
         obj_detection_cap.release()
     st.write("Stop Video")
 
-if st.button("Read"):
+read_button = st.button("Read.png")
+if read_button:
     read_model()

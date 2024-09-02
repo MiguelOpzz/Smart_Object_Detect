@@ -13,7 +13,7 @@ if platform.system() == "Windows":
 
 # Motion detection code
 bg_subtractor = cv2.createBackgroundSubtractorMOG2()
-model = hub.load('ultralytics/yolov5', 'yolov5s')
+model = hub.load('ultralytics/yolov5', './GUI/yolov5s')
 obj_detection_cap = None
 motion_detection_mode = False
 
@@ -89,7 +89,7 @@ def stop_motion_detection():
 
 def read_model():
     global model
-    model = hub.load('ultralytics/yolov5', 'yolov5s')
+    model = hub.load('ultralytics/yolov5', './GUI/yolov5s')
     if model:
         st.write("Ready model")
     else:

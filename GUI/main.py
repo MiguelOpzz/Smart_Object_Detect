@@ -90,3 +90,42 @@ def perform_object_detection():
         st.image(img, channels="BGR")
 
 def start_motion_detection():
+    global obj_detection_cap, motion_detection_mode
+    obj_detection_cap = cv2.VideoCapture(0)
+    motion_detection_mode = True
+
+def stop_motion_detection():
+    global obj_detection_cap, motion_detection_mode
+    if obj_detection_cap is not None:
+        obj_detection_cap.release()
+    motion_detection_mode = False
+
+def read_model():
+    global model
+    model = hub.load('ultralytics/yolov5', 'yolov5s')
+    if model:
+        st.write("Ready model")
+    else:
+        st.write("No model")
+
+st.title("SMART MOTION DETECTION | ARTIFICIAL INTELLIGENCE")
+
+st.write("## Real Time Interference")
+
+start_button = st.button("Start.png")
+if start_button:
+    start_motion_detection()
+    t = Thread(target=perform_object_detection)
+    t.start()
+    st.write("Start Video")
+
+stop_button = st.button("Stop.png")
+if stop_button:
+    stop_motion_detection()
+    if obj_detection_cap:
+        obj_detection_cap.release()
+    st.write("Stop Video")
+
+read_button = st.button("Read.png")
+if read_button:
+    read_model()

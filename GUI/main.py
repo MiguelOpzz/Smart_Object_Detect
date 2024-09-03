@@ -4,12 +4,23 @@ import imutils
 from torch import hub
 import time
 from threading import Thread
+from streamlit_lottie import st_lottie
+import requests
 
 # Motion detection code
 bg_subtractor = cv2.createBackgroundSubtractorMOG2()
 model = hub.load('ultralytics/yolov5', 'yolov5s')
 obj_detection_cap = None
 motion_detection_mode = False
+
+# Load Lottie animation
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+lottie_animation = load_lottieurl("https://assets10.lottiefiles.com/packages/lf20_p6y3qlwv.json")
 
 def play_sound():
     sound_html = """
@@ -53,7 +64,7 @@ def perform_object_detection():
                 obj_detection_cap.release()
                 obj_detection_cap = cv2.VideoCapture(0)
             else:
-                st.write("No motion detected. LAMP = OFF, WAITING FOR MOTION...")
+                st.write("No motion detected. LAMP = OFF , WAITING FOR MOTION......")
                 continue
         
         ret, img = obj_detection_cap.read()
@@ -68,7 +79,8 @@ def perform_object_detection():
 
             if len(persons) > 0:
                 play_sound()  # Play sound using HTML
-                st.write("Person detected. LAMP = ON")
+                st_lottie(lottie_animation, height=100, key="person_detected")
+                st.write("Person detected. LAMP = ON ")
             else:
                 obj_detection_cap.release()
                 motion_detection_mode = True
@@ -78,42 +90,3 @@ def perform_object_detection():
         st.image(img, channels="BGR")
 
 def start_motion_detection():
-    global obj_detection_cap, motion_detection_mode
-    obj_detection_cap = cv2.VideoCapture(0)
-    motion_detection_mode = True
-
-def stop_motion_detection():
-    global obj_detection_cap, motion_detection_mode
-    if obj_detection_cap is not None:
-        obj_detection_cap.release()
-    motion_detection_mode = False
-
-def read_model():
-    global model
-    model = hub.load('ultralytics/yolov5', 'yolov5s')
-    if model:
-        st.write("Ready model")
-    else:
-        st.write("No model")
-
-st.title("SMART MOTION DETECTION | ARTIFICIAL INTELLIGENCE")
-
-st.write("## Real Time Interference")
-
-start_button = st.button("Start")
-if start_button:
-    start_motion_detection()
-    t = Thread(target=perform_object_detection)
-    t.start()
-    st.write("Start Video")
-
-stop_button = st.button("Stop")
-if stop_button:
-    stop_motion_detection()
-    if obj_detection_cap:
-        obj_detection_cap.release()
-    st.write("Stop Video")
-
-read_button = st.button("Read")
-if read_button:
-    read_model()

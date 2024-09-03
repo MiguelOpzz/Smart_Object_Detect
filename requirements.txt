@@ -1,8 +1,8 @@
 streamlit
-opencv-python-headless
-opencv-python
 imutils
 torch
 torchvision
 ultralytics
 streamlit-lottie
+opencv-python-headless
+opencv-python

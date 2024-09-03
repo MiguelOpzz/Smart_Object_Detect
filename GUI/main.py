@@ -33,13 +33,13 @@ def play_sound():
 
 def motion_detection(cap):
     if not cap.isOpened():
-        st.write("Error: Failed to open camera.")
+        st.error("Error: Failed to open camera.")
         return False
 
     while True:
         _, frame = cap.read()
         if frame is None:
-            st.write("Error: Failed to capture frame.")
+            st.error("Error: Failed to capture frame.")
             break
 
         fg_mask = bg_subtractor.apply(frame)
@@ -51,7 +51,7 @@ def motion_detection(cap):
         else:
             return False
 
-def perform_object_detection():
+def perform_object_detection(update_placeholder):
     global obj_detection_cap, motion_detection_mode, model
     while True:
         time.sleep(1)
@@ -60,11 +60,11 @@ def perform_object_detection():
             motion_detected = motion_detection(obj_detection_cap)
             if motion_detected:
                 motion_detection_mode = False
-                st.write("Motion detected. Switching to object detection mode.")
+                update_placeholder.write("Motion detected. Switching to object detection mode.")
                 obj_detection_cap.release()
                 obj_detection_cap = cv2.VideoCapture(0)
             else:
-                st.write("No motion detected. LAMP = OFF , WAITING FOR MOTION......")
+                update_placeholder.write("No motion detected. LAMP = OFF , WAITING FOR MOTION......")
                 continue
         
         ret, img = obj_detection_cap.read()
@@ -78,21 +78,23 @@ def perform_object_detection():
                 cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 255), 2)
 
             if len(persons) > 0:
-                play_sound()  # Play sound using HTML
-                st_lottie(lottie_animation, height=100, key="person_detected")
-                st.write("Person detected. LAMP = ON ")
+                play_sound()
+                update_placeholder.lottie(lottie_animation, height=100, key="person_detected")
+                update_placeholder.write("Person detected. LAMP = ON ")
             else:
                 obj_detection_cap.release()
                 motion_detection_mode = True
-                st.write("No person detected. Switching back to motion detection mode.")
+                update_placeholder.write("No person detected. Switching back to motion detection mode.")
                 obj_detection_cap = cv2.VideoCapture(0)
 
-        st.image(img, channels="BGR")
+        update_placeholder.image(img, channels="BGR")
 
-def start_motion_detection():
+def start_motion_detection(update_placeholder):
     global obj_detection_cap, motion_detection_mode
     obj_detection_cap = cv2.VideoCapture(0)
     motion_detection_mode = True
+    t = Thread(target=perform_object_detection, args=(update_placeholder,))
+    t.start()
 
 def stop_motion_detection():
     global obj_detection_cap, motion_detection_mode
@@ -112,20 +114,18 @@ st.title("SMART MOTION DETECTION | ARTIFICIAL INTELLIGENCE")
 
 st.write("## Real Time Interference")
 
-start_button = st.button("Start.png")
-if start_button:
-    start_motion_detection()
-    t = Thread(target=perform_object_detection)
-    t.start()
-    st.write("Start Video")
+update_placeholder = st.empty()  # Placeholder for updates
 
-stop_button = st.button("Stop.png")
+start_button = st.button("Start")
+if start_button:
+    start_motion_detection(update_placeholder)
+    update_placeholder.write("Start Video")
+
+stop_button = st.button("Stop")
 if stop_button:
     stop_motion_detection()
-    if obj_detection_cap:
-        obj_detection_cap.release()
-    st.write("Stop Video")
+    update_placeholder.write("Stop Video")
 
-read_button = st.button("Read.png")
+read_button = st.button("Read")
 if read_button:
     read_model()

@@ -2,14 +2,9 @@ import streamlit as st
 import cv2
 import imutils
 from torch import hub
+import winsound
 import time
 from threading import Thread
-import sys
-import platform
-
-# Check if the platform is Windows before importing winsound
-if platform.system() == "Windows":
-    import winsound
 
 # Motion detection code
 bg_subtractor = cv2.createBackgroundSubtractorMOG2()
@@ -64,9 +59,7 @@ def perform_object_detection():
                 cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 255), 2)
 
             if len(persons) > 0:
-                # Beep only if winsound is available (i.e., on Windows)
-                if 'winsound' in sys.modules:
-                    winsound.Beep(1000, 200)
+                winsound.Beep(1000, 200)
                 st.write("Person detected. LAMP = ON ")
             else:
                 obj_detection_cap.release()

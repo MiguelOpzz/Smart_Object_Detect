@@ -1,11 +1,10 @@
 import streamlit as st
 import cv2
-import imutils
-from torch import hub
 import time
 from threading import Thread
 from streamlit_lottie import st_lottie
 import requests
+from torch import hub
 
 # Motion detection code
 bg_subtractor = cv2.createBackgroundSubtractorMOG2()
@@ -33,13 +32,13 @@ def play_sound():
 
 def motion_detection(cap):
     if not cap.isOpened():
-        st.error("Error: Failed to open camera.")
+        st.session_state['error'] = "Error: Failed to open camera."
         return False
 
     while True:
         _, frame = cap.read()
         if frame is None:
-            st.error("Error: Failed to capture frame.")
+            st.session_state['error'] = "Error: Failed to capture frame."
             break
 
         fg_mask = bg_subtractor.apply(frame)
@@ -51,7 +50,7 @@ def motion_detection(cap):
         else:
             return False
 
-def perform_object_detection(update_placeholder):
+def perform_object_detection():
     global obj_detection_cap, motion_detection_mode, model
     while True:
         time.sleep(1)
@@ -60,11 +59,11 @@ def perform_object_detection(update_placeholder):
             motion_detected = motion_detection(obj_detection_cap)
             if motion_detected:
                 motion_detection_mode = False
-                update_placeholder.write("Motion detected. Switching to object detection mode.")
+                st.session_state['status'] = "Motion detected. Switching to object detection mode."
                 obj_detection_cap.release()
                 obj_detection_cap = cv2.VideoCapture(0)
             else:
-                update_placeholder.write("No motion detected. LAMP = OFF , WAITING FOR MOTION......")
+                st.session_state['status'] = "No motion detected. LAMP = OFF , WAITING FOR MOTION......"
                 continue
         
         ret, img = obj_detection_cap.read()
@@ -77,24 +76,23 @@ def perform_object_detection(update_placeholder):
                 x1, y1, x2, y2, _, _ = person
                 cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 255), 2)
 
+            st.session_state['img'] = img
+
             if len(persons) > 0:
                 play_sound()
-                update_placeholder.lottie(lottie_animation, height=100, key="person_detected")
-                update_placeholder.write("Person detected. LAMP = ON ")
+                st.session_state['status'] = "Person detected. LAMP = ON "
+                st.session_state['person_detected'] = True
             else:
                 obj_detection_cap.release()
                 motion_detection_mode = True
-                update_placeholder.write("No person detected. Switching back to motion detection mode.")
-                obj_detection_cap = cv2.VideoCapture(0)
+                st.session_state['status'] = "No person detected. Switching back to motion detection mode."
+                st.session_state['person_detected'] = False
 
-        update_placeholder.image(img, channels="BGR")
-
-def start_motion_detection(update_placeholder):
+def start_motion_detection():
     global obj_detection_cap, motion_detection_mode
     obj_detection_cap = cv2.VideoCapture(0)
     motion_detection_mode = True
-    t = Thread(target=perform_object_detection, args=(update_placeholder,))
-    t.start()
+    Thread(target=perform_object_detection).start()
 
 def stop_motion_detection():
     global obj_detection_cap, motion_detection_mode
@@ -114,11 +112,20 @@ st.title("SMART MOTION DETECTION | ARTIFICIAL INTELLIGENCE")
 
 st.write("## Real Time Interference")
 
-update_placeholder = st.empty()  # Placeholder for updates
+if 'status' not in st.session_state:
+    st.session_state['status'] = ""
+
+if 'img' not in st.session_state:
+    st.session_state['img'] = None
+
+if 'person_detected' not in st.session_state:
+    st.session_state['person_detected'] = False
+
+update_placeholder = st.empty()
 
 start_button = st.button("Start")
 if start_button:
-    start_motion_detection(update_placeholder)
+    start_motion_detection()
     update_placeholder.write("Start Video")
 
 stop_button = st.button("Stop")
@@ -129,3 +136,13 @@ if stop_button:
 read_button = st.button("Read")
 if read_button:
     read_model()
+
+# Periodic UI Update Loop
+while True:
+    if st.session_state['status']:
+        update_placeholder.write(st.session_state['status'])
+    if st.session_state['img'] is not None:
+        update_placeholder.image(st.session_state['img'], channels="BGR")
+    if st.session_state['person_detected']:
+        update_placeholder.lottie(lottie_animation, height=100, key="person_detected")
+    time.sleep(1)

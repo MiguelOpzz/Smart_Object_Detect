@@ -22,13 +22,7 @@ def load_lottieurl(url: str):
 lottie_animation = load_lottieurl("https://assets10.lottiefiles.com/packages/lf20_p6y3qlwv.json")
 
 def play_sound():
-    sound_html = """
-    <audio autoplay>
-    <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
-    Your browser does not support the audio element.
-    </audio>
-    """
-    st.markdown(sound_html, unsafe_allow_html=True)
+    st_lottie(lottie_animation, height=100, key="person_detected")
 
 def motion_detection(cap):
     if not cap.isOpened():
@@ -79,9 +73,8 @@ def perform_object_detection():
             st.session_state['img'] = img
 
             if len(persons) > 0:
-                play_sound()
-                st.session_state['status'] = "Person detected. LAMP = ON "
                 st.session_state['person_detected'] = True
+                st.session_state['status'] = "Person detected. LAMP = ON "
             else:
                 obj_detection_cap.release()
                 motion_detection_mode = True
@@ -144,5 +137,5 @@ while True:
     if st.session_state['img'] is not None:
         update_placeholder.image(st.session_state['img'], channels="BGR")
     if st.session_state['person_detected']:
-        update_placeholder.lottie(lottie_animation, height=100, key="person_detected")
+        play_sound()
     time.sleep(1)

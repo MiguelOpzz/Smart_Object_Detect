@@ -2,7 +2,6 @@ import streamlit as st
 import cv2
 import imutils
 from torch import hub
-import winsound
 import time
 from threading import Thread
 
@@ -11,6 +10,15 @@ bg_subtractor = cv2.createBackgroundSubtractorMOG2()
 model = hub.load('ultralytics/yolov5', 'yolov5s')
 obj_detection_cap = None
 motion_detection_mode = False
+
+def play_sound():
+    sound_html = """
+    <audio autoplay>
+    <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
+    Your browser does not support the audio element.
+    </audio>
+    """
+    st.markdown(sound_html, unsafe_allow_html=True)
 
 def motion_detection(cap):
     if not cap.isOpened():
@@ -45,7 +53,7 @@ def perform_object_detection():
                 obj_detection_cap.release()
                 obj_detection_cap = cv2.VideoCapture(0)
             else:
-                st.write("No motion detected. LAMP = OFF , WAITING FOR MOTION......")
+                st.write("No motion detected. LAMP = OFF, WAITING FOR MOTION...")
                 continue
         
         ret, img = obj_detection_cap.read()
@@ -59,8 +67,8 @@ def perform_object_detection():
                 cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (255, 255, 255), 2)
 
             if len(persons) > 0:
-                winsound.Beep(1000, 200)
-                st.write("Person detected. LAMP = ON ")
+                play_sound()  # Play sound using HTML
+                st.write("Person detected. LAMP = ON")
             else:
                 obj_detection_cap.release()
                 motion_detection_mode = True
@@ -92,20 +100,20 @@ st.title("SMART MOTION DETECTION | ARTIFICIAL INTELLIGENCE")
 
 st.write("## Real Time Interference")
 
-start_button = st.button("Start.png")
+start_button = st.button("Start")
 if start_button:
     start_motion_detection()
     t = Thread(target=perform_object_detection)
     t.start()
     st.write("Start Video")
 
-stop_button = st.button("Stop.png")
+stop_button = st.button("Stop")
 if stop_button:
     stop_motion_detection()
     if obj_detection_cap:
         obj_detection_cap.release()
     st.write("Stop Video")
 
-read_button = st.button("Read.png")
+read_button = st.button("Read")
 if read_button:
     read_model()
